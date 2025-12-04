@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ResearchTask {
+  id              String    @id @default(cuid())
+  userId          String    @default("anonymous")
+  query           String
+  status          String    @default("pending") // pending, processing, complete, failed
+  progress        Int       @default(0)
+  report          String?   @db.Text
+  summary         String?   @db.Text
+  sources         Source[]
+  metadata        Json?
+  error           String?
+  createdAt       DateTime  @default(now())
+  startedAt       DateTime?
+  completedAt     DateTime?
+  
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Source {
+  id              String    @id @default(cuid())
+  taskId          String
+  task            ResearchTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  title           String
+  url             String
+  content         String?   @db.Text
+  snippet         String?   @db.Text
+  relevanceScore  Float     @default(0)
+  credibilityScore Float    @default(0)
+  publishedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  
+  @@index([taskId])
+}
+
+model ResearchCache {
+  id              String    @id @default(cuid())
+  queryHash       String    @unique
+  results         Json
+  metadata        Json?
+  expiresAt       DateTime
+  createdAt       DateTime  @default(now())
+  
+  @@index([expiresAt])
+}
